@@ -17,6 +17,7 @@ namespace WindowsFormsApp1
         private SerialPort myPort;
         private DateTime datetime;
         private string in_data;
+        private DateTime monitored;
         private System.Windows.Forms.DataVisualization.Charting.Series heightseries = new System.Windows.Forms.DataVisualization.Charting.Series
         {
             Name = "Flood Height",
@@ -42,6 +43,7 @@ namespace WindowsFormsApp1
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            baud_cb.SelectedItem = baud_cb.Items[baud_cb.Items.IndexOf("9600")];
             heightchart.Series.Clear();
             speedchart.Series.Clear();
 
@@ -63,13 +65,6 @@ namespace WindowsFormsApp1
             speedseries.Points.AddXY(time.Minute, speed);
         }
 
-        private double f(int i)
-        {
-            var f1 = 59894 - (8128 * i) + (262 * i * i) - (1.6 * i * i * i);
-            return f1;
-        }
-
-
         private void getPortNames()
         {
             string[] ports = SerialPort.GetPortNames();
@@ -77,6 +72,7 @@ namespace WindowsFormsApp1
             {
                 ports_cb.Items.Add(port);
             }
+            ports_cb.SelectedItem = ports_cb.Items[0];
         }
 
         private void portSetup()
@@ -102,6 +98,7 @@ namespace WindowsFormsApp1
                     start_btn.Enabled = false;
                     stop_btn.Enabled = true;
                     save_btn.Enabled = false;
+                    monitored = DateTime.Now;
                 }
                 catch (Exception ex)
                 {
@@ -116,7 +113,7 @@ namespace WindowsFormsApp1
         private void myPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             in_data = myPort.ReadLine();
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(250);
             this.Invoke(new EventHandler(displaydata_event));
         }
 
@@ -126,15 +123,12 @@ namespace WindowsFormsApp1
             datetime = DateTime.Now;
             string time = datetime.Hour + ":" + datetime.Minute + ":" + datetime.Second;
             data_tb.AppendText(time+ "---"+ in_data+"\n");
-            int i = 1;
             addToHeightChart(datetime, values[0]);
             currentHeight.Text = values[0];
             addToSpeedChart(datetime, values[1]);
             currentSpeed.Text = values[1];
-        }
-
-        private void sensorOneRead(int value)
-        {
+            TimeSpan diff = datetime - monitored;
+            timeElapsed.Text = diff.Hours+":"+diff.Minutes+":"+diff.Seconds;
         }
 
         private void stop_btn_Click(object sender, EventArgs e)
